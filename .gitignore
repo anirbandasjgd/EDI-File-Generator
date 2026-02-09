@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Generated EDI files (keep folder via edi_output/.gitkeep)
+edi_output/*.edi
+
+# Environment and secrets
+.env
+*.env
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo

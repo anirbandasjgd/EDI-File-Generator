@@ -1,0 +1,6 @@
+# EDI File Generator - Dependencies
+# For the Streamlit UI (app.py):
+streamlit>=1.30.0
+#
+# The EDI module (edi_schemas, edi_generator, edi_agent) uses only Python stdlib.
+# No other pip packages are required to run: streamlit run EDI_File_Generator/app.py
