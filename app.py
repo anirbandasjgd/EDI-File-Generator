@@ -3,6 +3,7 @@ EDI File Generator - Streamlit UI
 Select claim type (837P/837I), enter segment values for each loop, then generate the EDI file.
 Run from project root: streamlit run EDI_File_Generator/app.py
 """
+import re
 import sys
 from pathlib import Path
 
@@ -33,8 +34,34 @@ st.markdown("""
     .main-header h1 { margin: 0; font-size: 1.8rem; }
     .main-header p { margin: 0.3rem 0 0 0; opacity: 0.9; font-size: 0.95rem; }
     .loop-card { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; }
+    .edi-error-label { color: #dc3545; font-size: 0.85rem; margin-bottom: 0.25rem; font-weight: 500; }
+    .edi-error-row { background: #fff5f5; border-left: 4px solid #dc3545; padding: 0.5rem 0.75rem; border-radius: 4px; margin-bottom: 0.5rem; }
 </style>
 """, unsafe_allow_html=True)
+
+
+def _parse_error_keys(claim_type: str, error_messages: list) -> set:
+    """
+    Parse validation error messages and return the set of UI keys for fields that are missing.
+    Errors look like: "Loop 1000A: Required NM101 (...) is missing." or "Loop 2400[1]: Required LX01 (...) is missing."
+    """
+    keys = set()
+    prefix = f"edi_{claim_type}_"
+    # Loop 2400[1]: Required LX01 (...) is missing.  (match repeatable first)
+    pattern_repeat = re.compile(r"Loop (\w+)\[(\d+)\]: Required ([A-Z0-9_]+) ")
+    # Loop 1000A: Required NM101 (...) is missing.  (el_id can be NM101, DTP01_2, etc.)
+    pattern_simple = re.compile(r"Loop (\w+): Required ([A-Z0-9_]+) ")
+    for msg in error_messages:
+        m = pattern_repeat.match(msg)
+        if m:
+            loop_id, idx, el_id = m.group(1), m.group(2), m.group(3)
+            keys.add(f"{prefix}{loop_id}_{idx}_{el_id}")
+            continue
+        m = pattern_simple.match(msg)
+        if m:
+            loop_id, el_id = m.group(1), m.group(2)
+            keys.add(f"{prefix}{loop_id}_{el_id}")
+    return keys
 
 
 def _collect_form_data(claim_type: str) -> dict:
@@ -66,6 +93,31 @@ def _collect_form_data(claim_type: str) -> dict:
     return form_data
 
 
+def _render_field_with_error(claim_type: str, loop_id: str, el: dict, key: str, index: int | None = None):
+    """Render a text input, wrapped with red highlight and error message when key is in edi_error_keys."""
+    error_keys = st.session_state.get("edi_error_keys", set())
+    is_error = key in error_keys
+    if is_error:
+        st.markdown(
+            '<p class="edi-error-label">⚠ Required – please enter a value</p>',
+            unsafe_allow_html=True,
+        )
+    col_bar, col_input = st.columns([0.02, 0.98])
+    with col_bar:
+        if is_error:
+            st.markdown(
+                '<div style="background:#dc3545; min-height:2.5em; border-radius:4px;"></div>',
+                unsafe_allow_html=True,
+            )
+    with col_input:
+        st.text_input(
+            el["label"],
+            key=key,
+            placeholder=el.get("help", ""),
+            help=el.get("help") if not el.get("required") else f"Required. {el.get('help', '')}",
+        )
+
+
 def main():
     st.markdown("""
     <div class="main-header">
@@ -88,6 +140,12 @@ def main():
     except ValueError as e:
         st.error(str(e))
         return
+
+    # Show validation error banner when fields are highlighted in red (after rerun)
+    all_error_keys = st.session_state.get("edi_error_keys", set())
+    error_keys = {k for k in all_error_keys if k.startswith(f"edi_{claim_type}_")}
+    if error_keys:
+        st.error("**Please fix the required fields highlighted in red below.**")
 
     # Optional ISA (interchange) section
     with st.expander("Interchange / ISA (optional – leave blank for defaults)", expanded=False):
@@ -125,22 +183,14 @@ def main():
                     st.markdown(f"**Service line {i + 1}**")
                     for seg in loop_def.get("segments", []):
                         for el in seg.get("elements", []):
-                            st.text_input(
-                                el["label"],
-                                key=f"edi_{claim_type}_2400_{i}_{el['id']}",
-                                placeholder=el.get("help", ""),
-                                help=el.get("help") if not el.get("required") else f"Required. {el.get('help', '')}",
-                            )
+                            key = f"edi_{claim_type}_2400_{i}_{el['id']}"
+                            _render_field_with_error(claim_type, loop_id, el, key, index=i)
             else:
                 for seg in loop_def.get("segments", []):
                     st.markdown(f"*{seg['name']}*")
                     for el in seg.get("elements", []):
-                        st.text_input(
-                            el["label"],
-                            key=f"edi_{claim_type}_{loop_id}_{el['id']}",
-                            placeholder=el.get("help", ""),
-                            help=el.get("help") if not el.get("required") else f"Required. {el.get('help', '')}",
-                        )
+                        key = f"edi_{claim_type}_{loop_id}_{el['id']}"
+                        _render_field_with_error(claim_type, loop_id, el, key)
 
     # 3. Generate EDI file from user inputs
     st.markdown("---")
@@ -149,6 +199,7 @@ def main():
         with st.spinner("Creating EDI file..."):
             result = generate_837_file(claim_type, form_data)
         if result["success"]:
+            st.session_state.pop("edi_error_keys", None)
             st.success(result["message"])
             if result.get("errors"):
                 for err in result["errors"]:
@@ -166,9 +217,12 @@ def main():
                     key="edi_download_btn",
                 )
         else:
+            errors = result.get("errors", [])
+            st.session_state["edi_error_keys"] = _parse_error_keys(claim_type, errors)
             st.error(result["message"])
-            for err in result.get("errors", []):
+            for err in errors:
                 st.warning(err)
+            st.rerun()
 
 
 if __name__ == "__main__":

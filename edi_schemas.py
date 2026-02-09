@@ -252,6 +252,49 @@ LOOPS_837P = [
         ],
     },
     {
+        "loop_id": "2320",
+        "name": "COB (Coordination of Benefits)",
+        "description": "Optional. Other payer / coordination of benefits information. Include only when COB applies.",
+        "segments": [
+            {
+                "seg_id": "SBR",
+                "name": "Other Subscriber Information",
+                "elements": [
+                    _el("SBR01", "Payer Responsibility (P=Primary, S=Secondary, T=Tertiary)", False, "P, S, or T"),
+                    _el("SBR02", "Individual Relationship Code (18=Self, 01=Spouse)", False, ""),
+                    _el("SBR03", "Group Policy Number", False, ""),
+                    _el("SBR04", "Group or Policy Number", False, ""),
+                    _el("SBR09", "Claim Filing Code (11=Other, 12=Medicare)", False, "11, 12, etc."),
+                ],
+            },
+            {
+                "seg_id": "AMT",
+                "name": "COB Amount (e.g. Paid / Allowed)",
+                "elements": [
+                    _el("AMT01", "Amount Qualifier (D=Amount Paid, B6=Allowed)", False, "D or B6"),
+                    _el("AMT02", "Amount", False, "Numeric amount"),
+                ],
+            },
+            {
+                "seg_id": "OI",
+                "name": "Other Insurance Coverage",
+                "elements": [
+                    _el("OI01", "Benefits Assignment (Y/N)", False, "Y or N"),
+                    _el("OI02", "Release of Information (Y/N)", False, "Y or N"),
+                    _el("OI03", "Provider Accept Assignment (Y/N)", False, "Y or N"),
+                ],
+            },
+            {
+                "seg_id": "REF",
+                "name": "Other Payer Reference",
+                "elements": [
+                    _el("REF01", "Reference Qualifier (1L=Group, 17=Member ID)", False, "1L or 17"),
+                    _el("REF02", "Reference Identifier", False, "Other payer ID or group number"),
+                ],
+            },
+        ],
+    },
+    {
         "loop_id": "2400",
         "name": "Service Line",
         "description": "Line-level service and charge (repeat for each line).",
@@ -535,6 +578,49 @@ LOOPS_837I = [
                     _el("HI03", "Code 2", False, ""),
                     _el("HI04", "Code 3", False, ""),
                     _el("HI05", "Code 4", False, ""),
+                ],
+            },
+        ],
+    },
+    {
+        "loop_id": "2320",
+        "name": "COB (Coordination of Benefits)",
+        "description": "Optional. Other payer / coordination of benefits information. Include only when COB applies.",
+        "segments": [
+            {
+                "seg_id": "SBR",
+                "name": "Other Subscriber Information",
+                "elements": [
+                    _el("SBR01", "Payer Responsibility (P=Primary, S=Secondary, T=Tertiary)", False, "P, S, or T"),
+                    _el("SBR02", "Individual Relationship Code (18=Self, 01=Spouse)", False, ""),
+                    _el("SBR03", "Group Policy Number", False, ""),
+                    _el("SBR04", "Group or Policy Number", False, ""),
+                    _el("SBR09", "Claim Filing Code (11=Other, 12=Medicare)", False, "11, 12, etc."),
+                ],
+            },
+            {
+                "seg_id": "AMT",
+                "name": "COB Amount (e.g. Paid / Allowed)",
+                "elements": [
+                    _el("AMT01", "Amount Qualifier (D=Amount Paid, B6=Allowed)", False, "D or B6"),
+                    _el("AMT02", "Amount", False, "Numeric amount"),
+                ],
+            },
+            {
+                "seg_id": "OI",
+                "name": "Other Insurance Coverage",
+                "elements": [
+                    _el("OI01", "Benefits Assignment (Y/N)", False, "Y or N"),
+                    _el("OI02", "Release of Information (Y/N)", False, "Y or N"),
+                    _el("OI03", "Provider Accept Assignment (Y/N)", False, "Y or N"),
+                ],
+            },
+            {
+                "seg_id": "REF",
+                "name": "Other Payer Reference",
+                "elements": [
+                    _el("REF01", "Reference Qualifier (1L=Group, 17=Member ID)", False, "1L or 17"),
+                    _el("REF02", "Reference Identifier", False, "Other payer ID or group number"),
                 ],
             },
         ],
