@@ -26,7 +26,11 @@ python EDI_File_Generator/run_edi_generator.py 837P
 python EDI_File_Generator/run_edi_generator.py 837I
 ```
 
-Generated files: **`EDI_File_Generator/edi_output/837P_YYYYMMDD_HHMMSS.edi`** (and 837I). See **SETUP.md** for full setup.
+Generated files: **`edi_output/837P_YYYYMMDD_HHMMSS.edi`** (and 837I). See **SETUP.md** for full setup.
+
+## Push to a new Git remote
+
+This folder is its own Git repo. To push it to GitHub/GitLab as a new repo, see **PUSH.md**.
 
 ## Features
 
