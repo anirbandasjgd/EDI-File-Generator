@@ -13,7 +13,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st
-from EDI_File_Generator import get_loops, generate_837_file
+from EDI_File_Generator import get_loops
+from EDI_File_Generator.edi_openai import build_claim_json, generate_837_via_openai
 
 st.set_page_config(
     page_title="EDI File Generator",
@@ -192,12 +193,13 @@ def main():
                         key = f"edi_{claim_type}_{loop_id}_{el['id']}"
                         _render_field_with_error(claim_type, loop_id, el, key)
 
-    # 3. Generate EDI file from user inputs
+    # 3. Generate EDI file from user inputs (JSON template → OpenAI → save EDI)
     st.markdown("---")
     if st.button("**Create EDI file**", type="primary", use_container_width=True):
         form_data = _collect_form_data(claim_type)
-        with st.spinner("Creating EDI file..."):
-            result = generate_837_file(claim_type, form_data)
+        claim_json = build_claim_json(form_data, claim_type)
+        with st.spinner("Building JSON and calling OpenAI to generate EDI..."):
+            result = generate_837_via_openai(claim_type, claim_json)
         if result["success"]:
             st.session_state.pop("edi_error_keys", None)
             st.success(result["message"])
@@ -222,7 +224,8 @@ def main():
             st.error(result["message"])
             for err in errors:
                 st.warning(err)
-            st.rerun()
+            if st.session_state.get("edi_error_keys"):
+                st.rerun()
 
 
 if __name__ == "__main__":
